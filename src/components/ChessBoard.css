@@ -1,0 +1,28 @@
+.chessboard{
+    display: grid;
+    grid-template-columns: repeat(8, var(--tile-width-lg));
+    grid-template-rows: repeat(8, var(--tile-width-lg));
+    gap: 2px;
+    background-color: #431605;
+    max-width: fit-content;
+    border: 3px solid #431605;
+    max-height: fit-content;
+    /* animation: boardRotate 5s infinite; */
+
+}
+
+@media only screen and (orientation: portrait) and (width < 400px) {
+  .chessboard {
+    grid-template-columns: repeat(8, var(--tile-width-sm));
+    grid-template-rows: repeat(8, var(--tile-width-sm));
+  }
+}
+
+@keyframes boardRotate {
+  from{
+    transform: rotateZ(0deg);
+  }
+  to{
+    transform: rotateZ(180deg);
+  }
+}

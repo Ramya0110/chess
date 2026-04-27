@@ -1,0 +1,30 @@
+.dialog-container{
+    position: fixed;
+    height: fit-content;
+    width: fit-content;
+    background-color: rgb(147 106 52);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    border-radius: 15px;
+    display: grid;
+    grid-template-columns: repeat(2,60px);
+    padding: 10px;
+    img{
+        padding: 7px;
+        border: 0.5px solid black;
+        cursor: pointer;
+    }
+}
+
+.dialog-overlay{
+    position: fixed;
+    top:0;
+    left:0;
+    width: 100vw;
+    height: 100vh;
+    background-color: black;
+    z-index: 999;
+    opacity: 0.7;
+}

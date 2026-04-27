@@ -1,0 +1,12 @@
+#root{
+    max-height: 100vh;
+    max-width: 100vw;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+:root{
+    --tile-width-xs: 37px;
+    --tile-width-sm: 40px;
+    --tile-width-lg: 50px;
+}

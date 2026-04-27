@@ -1,0 +1,20 @@
+.tile{
+    height: var(--tile-width-lg);
+    width: var(--tile-width-lg);
+    display: flex;
+    justify-content: center;
+}
+
+.tileContent{
+    display: flex;
+    align-self: center;
+    justify-self: center;
+    cursor: pointer;
+}
+
+@media only screen and (orientation: portrait) and (width < 400px) {
+  .tile {
+    height: var(--tile-width-sm);
+    width: var(--tile-width-sm);
+  }
+}
