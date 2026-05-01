@@ -1,8 +1,13 @@
+body {
+    height: 98vh;
+    width: 98vw;
+    display: flex;
+    align-items: center;
+}
+
 #root{
-    max-height: 100vh;
-    max-width: 100vw;
-    overflow-y: auto;
-    overflow-x: auto;
+    width: 100%;
+    height: 100%;
 }
 
 :root{
