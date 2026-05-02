@@ -16,14 +16,14 @@ export type ChessBoardContextType = {
 }
 
 const initialBoardState: Square[][] = [
-    [{ colour: "BLACK", piece: "R" }, { colour: "BLACK", piece: "H" }, { colour: "BLACK", piece: "B" }, { colour: "BLACK", piece: "Q" }, { colour: "BLACK", piece: "K" }, { colour: "BLACK", piece: "B" }, { colour: "BLACK", piece: "H" }, { colour: "BLACK", piece: "R" }],
+    [{ colour: "BLACK", piece: "R", untouched: true }, { colour: "BLACK", piece: "H" }, { colour: "BLACK", piece: "B" }, { colour: "BLACK", piece: "Q" }, { colour: "BLACK", piece: "K", untouched: true }, { colour: "BLACK", piece: "B" }, { colour: "BLACK", piece: "H" }, { colour: "BLACK", piece: "R", untouched: true }],
     new Array(8).fill({ colour: "BLACK", piece: "P" }),
     new Array(8).fill(null),
     new Array(8).fill(null),
     new Array(8).fill(null),
     new Array(8).fill(null),
     new Array(8).fill({ colour: "WHITE", piece: "P" }),
-    [{ colour: "WHITE", piece: "R" }, { colour: "WHITE", piece: "H" }, { colour: "WHITE", piece: "B" }, { colour: "WHITE", piece: "Q" }, { colour: "WHITE", piece: "K" }, { colour: "WHITE", piece: "B" }, { colour: "WHITE", piece: "H" }, { colour: "WHITE", piece: "R" }],
+    [{ colour: "WHITE", piece: "R", untouched: true }, { colour: "WHITE", piece: "H" }, { colour: "WHITE", piece: "B" }, { colour: "WHITE", piece: "Q" }, { colour: "WHITE", piece: "K", untouched: true }, { colour: "WHITE", piece: "B" }, { colour: "WHITE", piece: "H" }, { colour: "WHITE", piece: "R", untouched: true }],
 ]
 
 export const ChessBoardContext = createContext<ChessBoardContextType>({

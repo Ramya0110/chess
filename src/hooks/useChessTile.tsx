@@ -206,6 +206,12 @@ export const useChessTile = () => {
                     kingMove(row + 1, col - 1, tile, moves)
                     kingMove(row + 1, col, tile, moves)
                     kingMove(row + 1, col + 1, tile, moves)
+                    if(boardState[row][col+3]?.piece === "R" && tile.untouched && boardState[row][col+3]?.untouched){
+                        kingMove(row, col+2, tile, moves)
+                    }
+                    if(boardState[row][col-4]?.piece === "R" && tile.untouched && boardState[row][col-4]?.untouched){
+                        kingMove(row, col-2, tile, moves)
+                    }
                     setAvailableMoves(moves)
                     return
                 }
@@ -219,8 +225,21 @@ export const useChessTile = () => {
                 if (crow >= 0 && ccol >= 0) {
                     let updatedBoard: Square[][] = [...[...boardState]]
                     updatedBoard[crow][ccol] = null
-                    pushcoveringPieceToArray(tile, updatedBoard[row][col])
+                    tile && pushcoveringPieceToArray(updatedBoard[row][col])
                     updatedBoard[row][col] = currentMovingPiece?.tile
+                    if(currentMovingPiece?.tile?.piece === "K" && currentMovingPiece?.tile.untouched){
+                        let king = updatedBoard[row][col];
+                        updatedBoard = castleKing({row,col},updatedBoard)
+                        if(king){
+                            updatedBoard[row][col] = {...king, untouched: false}
+                        }
+                    }
+                    if(currentMovingPiece?.tile.piece === "R"){
+                        let rook = updatedBoard[row][col]
+                        if(rook){                            
+                            updatedBoard[row][col] = {...rook, untouched: false}
+                        }
+                    }
                     // check if P is at the end of the board and do the promotion
                     if(updatedBoard[row][col]?.piece === "P" && (row == 0||row === 7))                   
                     {
@@ -240,15 +259,15 @@ export const useChessTile = () => {
             }
         }
     }
-    const pushcoveringPieceToArray = (tile: Square, coveringPiece: Square) => {
+    const pushcoveringPieceToArray = (coveringPiece: Square) => {
         let updatedCoveredPiece = { ...coveredPieces }
-        if (currentMovingPiece?.tile.colour === "WHITE" && tile) {
+        if (currentMovingPiece?.tile.colour === "WHITE") {
             updatedCoveredPiece = {
                 ...updatedCoveredPiece,
                 black: [...updatedCoveredPiece.black, coveringPiece]
             }
         }
-        if (currentMovingPiece?.tile.colour === "BLACK" && tile) {
+        if (currentMovingPiece?.tile.colour === "BLACK") {
             updatedCoveredPiece = {
                 ...updatedCoveredPiece,
                 white: [...updatedCoveredPiece.white, coveringPiece]
@@ -498,6 +517,18 @@ export const useChessTile = () => {
             (!boardState[row][col] || boardState[row][col]?.colour !== tile?.colour)) {
             moves.push({ row, col })
         }
+    }
+    const castleKing = (cell: Cell, updatedBoard: Square[][]) => {
+        const col = cell.col === 6? cell.col+1: cell.col === 2? cell.col-2: -1;
+        const updatedCol = cell.col === 6? cell.col-1: cell.col === 2? cell.col+1: -1;
+        if(col !== -1){
+            let rook = updatedBoard[cell.row][col];
+            if( rook?.piece === "R" && rook.untouched){
+                updatedBoard[cell.row][updatedCol] = {...rook, untouched: false};
+                updatedBoard[cell.row][col] = null;
+            }
+        }
+        return updatedBoard
     }
     const bishopMove = (row: number, col: number, tile: Square, moves: Cell[]) => {
         let i = 1;
