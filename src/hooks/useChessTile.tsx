@@ -1,5 +1,5 @@
 import { useContext } from "react"
-import type { PieceInfoType } from "../interfaces/piece-info"
+import type { PieceInfo, PieceInfoType } from "../interfaces/piece-info"
 import type { Square, Tile } from "../interfaces/tile"
 import { AppContext } from "../contexts/AppContext"
 import { ChessBoardContext } from "../contexts/ChessBoardContext"
@@ -206,10 +206,20 @@ export const useChessTile = () => {
                     kingMove(row + 1, col - 1, tile, moves)
                     kingMove(row + 1, col, tile, moves)
                     kingMove(row + 1, col + 1, tile, moves)
-                    if(boardState[row][col+3]?.piece === "R" && tile.untouched && boardState[row][col+3]?.untouched){
+                    if(boardState[row][col+3]?.piece === "R" && tile.untouched && boardState[row][col+3]?.untouched
+                        && isCellSafe({row, col:col}, boardState, tile.colour, false)
+                        && isCellSafe({row, col:col+1}, boardState, tile.colour, false)
+                        && isCellSafe({row, col:col+2}, boardState, tile.colour, false)
+                        && isCellSafe({row, col:col+3}, boardState, tile.colour, false)
+                    ){
                         kingMove(row, col+2, tile, moves)
                     }
-                    if(boardState[row][col-4]?.piece === "R" && tile.untouched && boardState[row][col-4]?.untouched){
+                    if(boardState[row][col-4]?.piece === "R" && tile.untouched && boardState[row][col-4]?.untouched 
+                        && isCellSafe({row, col:col}, boardState, tile.colour, false)
+                        && isCellSafe({row, col:col-1}, boardState, tile.colour, false)
+                        && isCellSafe({row, col:col-2}, boardState, tile.colour, false)
+                        && isCellSafe({row, col:col-3}, boardState, tile.colour, false)
+                        && isCellSafe({row, col:col-4}, boardState, tile.colour, false)){
                         kingMove(row, col-2, tile, moves)
                     }
                     setAvailableMoves(moves)
@@ -252,8 +262,16 @@ export const useChessTile = () => {
                     validateAndChangeTurn(currentMovingPiece?.tile)
                     setBoardState(updatedBoard)
                     kingOnCheck.current = []
-                    isCheck(updatedBoard, true)
-                    isCheck(updatedBoard, false)
+                    const isWhiteKingSafe = isCellSafe({row, col}, updatedBoard, "WHITE", true)
+                    if(!isWhiteKingSafe){
+                        const whiteKingPieceInfo = getKingPieceInfo(updatedBoard, "WHITE")
+                        onCheck(whiteKingPieceInfo.cell.row, whiteKingPieceInfo.cell.col, updatedBoard)
+                    }
+                    const isBlackKingSafe = isCellSafe({row, col}, updatedBoard, "BLACK", true)
+                    if(!isBlackKingSafe){
+                        const blackKingPieceInfo = getKingPieceInfo(updatedBoard, "BLACK")
+                        onCheck(blackKingPieceInfo.cell.row, blackKingPieceInfo.cell.col, updatedBoard)
+                    }
                     availableMoves.length = 0
                 }
             }
@@ -276,11 +294,11 @@ export const useChessTile = () => {
         setCoveredPieces(updatedCoveredPiece)
     }
 
-    const isDiagonalCheck = (kingInfo: PieceInfoType, updatedBoard: Square[][]) => {
+    const isDiagonalSafe = (cell: Cell, updatedBoard: Square[][], colour: Colour) => {
         //q2 diagonal
         let i = 1
-        let row = kingInfo?.cell.row !== undefined ? kingInfo?.cell.row : -100
-        let col = kingInfo?.cell.col !== undefined ? kingInfo?.cell.col : -100
+        let row = cell.row !== undefined ? cell.row : -100
+        let col = cell.col !== undefined ? cell.col : -100
         while (rowColExists(row - i, col - i)) {
             const nextTile: Square = updatedBoard[row - i][col - i];
             if (!nextTile) {
@@ -288,12 +306,12 @@ export const useChessTile = () => {
                 continue;
             }
             else {
-                if (nextTile.colour === kingInfo?.tile.colour) {
+                if (nextTile.colour === colour) {
                     break;
                 }
                 else {
                     if ((i === 1 && nextTile.piece === "P" && nextTile.colour === "BLACK") || (nextTile.piece === "B" || nextTile.piece === "Q")) {
-                        onCheck(kingInfo, nextTile, row - i, col - i)
+                        return false
                     }
                     break;
                 }
@@ -309,12 +327,12 @@ export const useChessTile = () => {
                 continue;
             }
             else {
-                if (nextTile.colour === kingInfo?.tile.colour) {
+                if (nextTile.colour === colour) {
                     break;
                 }
                 else {
                     if ((i === 1 && nextTile.piece === "P" && nextTile.colour === "BLACK") || (nextTile.piece === "B" || nextTile.piece === "Q")) {
-                        onCheck(kingInfo, nextTile, row - i, col + i)
+                        return false
                     }
                     break;
                 }
@@ -330,12 +348,12 @@ export const useChessTile = () => {
                 continue;
             }
             else {
-                if (nextTile.colour === kingInfo?.tile.colour) {
+                if (nextTile.colour === colour) {
                     break;
                 }
                 else {
                     if ((i === 1 && nextTile.piece === "P" && nextTile.colour === "WHITE") || (nextTile.piece === "B" || nextTile.piece === "Q")) {
-                        onCheck(kingInfo, nextTile, row + i, col - i)
+                        return false
                     }
                     break;
                 }
@@ -351,24 +369,25 @@ export const useChessTile = () => {
                 continue;
             }
             else {
-                if (nextTile.colour === kingInfo?.tile.colour) {
+                if (nextTile.colour === colour) {
                     break;
                 }
                 else {
                     if ((i === 1 && nextTile.piece === "P" && nextTile.colour === "WHITE") || (nextTile.piece === "B" || nextTile.piece === "Q")) {
-                        onCheck(kingInfo, nextTile, row + i, col + i)
+                        return false
                     }
                     break;
                 }
                 i++
             }
         }
+        return true
     }
 
-    const isPlusCheck = (kingInfo: PieceInfoType, updatedBoard: Square[][]) => {
+    const isPlusSafe = (cell: Cell, updatedBoard: Square[][], colour: Colour) => {
         let i = 1
-        let row = kingInfo?.cell.row !== undefined ? kingInfo?.cell.row : -100
-        let col = kingInfo?.cell.col !== undefined ? kingInfo?.cell.col : -100
+        let row = cell.row !== undefined ? cell.row : -100
+        let col = cell.col !== undefined ? cell.col : -100
         //up
         while (rowColExists(row - i, col)) {
             const nextTile = updatedBoard[row - i][col]
@@ -376,12 +395,12 @@ export const useChessTile = () => {
                 i++;
             }
             else {
-                if (nextTile.colour === kingInfo?.tile.colour) {
+                if (nextTile.colour === colour) {
                     break;
                 }
                 else {
                     if (nextTile.piece === "R" || nextTile.piece === "Q") {
-                        onCheck(kingInfo, nextTile, row - i, col)
+                        return false
                     }
                     break;
                 }
@@ -395,12 +414,12 @@ export const useChessTile = () => {
                 i++;
             }
             else {
-                if (nextTile.colour === kingInfo?.tile.colour) {
+                if (nextTile.colour === colour) {
                     break;
                 }
                 else {
                     if (nextTile.piece === "R" || nextTile.piece === "Q") {
-                        onCheck(kingInfo, nextTile, row + i, col)
+                        return false
                     }
                     break;
                 }
@@ -414,12 +433,12 @@ export const useChessTile = () => {
                 i++;
             }
             else {
-                if (nextTile.colour === kingInfo?.tile.colour) {
+                if (nextTile.colour === colour) {
                     break;
                 }
                 else {
                     if (nextTile.piece === "R" || nextTile.piece === "Q") {
-                        onCheck(kingInfo, nextTile, row, col - i)
+                        return false
                     }
                     break;
                 }
@@ -433,66 +452,70 @@ export const useChessTile = () => {
                 i++;
             }
             else {
-                if (nextTile.colour === kingInfo?.tile.colour) {
+                if (nextTile.colour === colour) {
                     break;
                 }
                 else {
                     if (nextTile.piece === "R" || nextTile.piece === "Q") {
-                        onCheck(kingInfo, nextTile, row, col + i)
+                        return false
                     }
                     break;
                 }
             }
         }
+        return true
     }
 
-    const isHorseCheck = (kingInfo: PieceInfoType, updatedBoard: Square[][]) => {
-        let krow: number = kingInfo?.cell.row !== undefined ? kingInfo?.cell.row : -100
-        let kcol: number = kingInfo?.cell.col !== undefined ? kingInfo?.cell.col : -100
+    const isHorseSafe = (cell: Cell, updatedBoard: Square[][], colour: Colour) => {
+        let krow: number = cell.row !== undefined ? cell.row : -100
+        let kcol: number = cell.col !== undefined ? cell.col : -100
         //q2
-        if ((rowColExists(krow - 2, kcol - 1) && updatedBoard[krow - 2][kcol - 1]?.colour !== kingInfo?.tile.colour && (updatedBoard[krow - 2][kcol - 1]?.piece === "H"))) {
-            onCheck(kingInfo, updatedBoard[krow - 2][kcol - 1], krow - 2, kcol - 1)
+        if ((rowColExists(krow - 2, kcol - 1) && updatedBoard[krow - 2][kcol - 1]?.colour !== colour && (updatedBoard[krow - 2][kcol - 1]?.piece === "H"))) {
+            return false
         }
-        if ((rowColExists(krow - 1, kcol - 2) && updatedBoard[krow - 1][kcol - 2]?.colour !== kingInfo?.tile.colour && (updatedBoard[krow - 1][kcol - 2]?.piece === "H"))) {
-            onCheck(kingInfo, updatedBoard[krow - 1][kcol - 2], krow - 1, kcol - 2)
+        if ((rowColExists(krow - 1, kcol - 2) && updatedBoard[krow - 1][kcol - 2]?.colour !== colour && (updatedBoard[krow - 1][kcol - 2]?.piece === "H"))) {
+            return false
         }
         //q3
-        if ((rowColExists(krow + 1, kcol - 2) && updatedBoard[krow + 1][kcol - 2]?.colour !== kingInfo?.tile.colour && (updatedBoard[krow + 1][kcol - 2]?.piece === "H"))) {
-            onCheck(kingInfo, updatedBoard[krow + 1][kcol - 2], krow + 1, kcol - 2)
+        if ((rowColExists(krow + 1, kcol - 2) && updatedBoard[krow + 1][kcol - 2]?.colour !== colour && (updatedBoard[krow + 1][kcol - 2]?.piece === "H"))) {
+            return false
         }
-        if ((rowColExists(krow + 2, kcol - 1) && updatedBoard[krow + 2][kcol - 1]?.colour !== kingInfo?.tile.colour && (updatedBoard[krow + 2][kcol - 1]?.piece === "H"))) {
-            onCheck(kingInfo, updatedBoard[krow + 2][kcol - 1], krow + 2, kcol - 1)
+        if ((rowColExists(krow + 2, kcol - 1) && updatedBoard[krow + 2][kcol - 1]?.colour !== colour && (updatedBoard[krow + 2][kcol - 1]?.piece === "H"))) {
+            return false
         }
         //q4
-        if ((rowColExists(krow + 1, kcol + 2) && updatedBoard[krow + 1][kcol + 2]?.colour !== kingInfo?.tile.colour && (updatedBoard[krow + 1][kcol + 2]?.piece === "H"))) {
-            onCheck(kingInfo, updatedBoard[krow + 1][kcol + 2], krow + 1, kcol + 2)
+        if ((rowColExists(krow + 1, kcol + 2) && updatedBoard[krow + 1][kcol + 2]?.colour !== colour && (updatedBoard[krow + 1][kcol + 2]?.piece === "H"))) {
+            return false
         }
-        if ((rowColExists(krow + 2, kcol + 1) && updatedBoard[krow + 2][kcol + 1]?.colour !== kingInfo?.tile.colour && (updatedBoard[krow + 2][kcol + 1]?.piece === "H"))) {
-            onCheck(kingInfo, updatedBoard[krow + 2][kcol + 1], krow + 2, kcol + 1)
+        if ((rowColExists(krow + 2, kcol + 1) && updatedBoard[krow + 2][kcol + 1]?.colour !== colour && (updatedBoard[krow + 2][kcol + 1]?.piece === "H"))) {
+            return false
         }
         //q1
-        if ((rowColExists(krow - 1, kcol + 2) && updatedBoard[krow - 1][kcol + 2]?.colour !== kingInfo?.tile.colour && (updatedBoard[krow - 1][kcol + 2]?.piece === "H"))) {
-            onCheck(kingInfo, updatedBoard[krow - 1][kcol + 2], krow - 1, kcol + 2)
+        if ((rowColExists(krow - 1, kcol + 2) && updatedBoard[krow - 1][kcol + 2]?.colour !== colour && (updatedBoard[krow - 1][kcol + 2]?.piece === "H"))) {
+            return false
         }
-        if ((rowColExists(krow - 2, kcol + 1) && updatedBoard[krow - 2][kcol + 1]?.colour !== kingInfo?.tile.colour && (updatedBoard[krow - 2][kcol + 1]?.piece === "H"))) {
-            onCheck(kingInfo, updatedBoard[krow - 2][kcol + 1], krow - 2, kcol + 1)
+        if ((rowColExists(krow - 2, kcol + 1) && updatedBoard[krow - 2][kcol + 1]?.colour !== colour && (updatedBoard[krow - 2][kcol + 1]?.piece === "H"))) {
+            return false
         }
+        return true
     }
 
-    const isCheck = (updatedBoard: Square[][], isWhiteTurn: boolean) => {
-        const kingInfo: PieceInfoType = getKingPieceInfo(updatedBoard, isWhiteTurn)
-        isDiagonalCheck(kingInfo, updatedBoard)
-        isPlusCheck(kingInfo, updatedBoard)
-        isHorseCheck(kingInfo, updatedBoard)
+    const isCellSafe = (cell: Cell, updatedBoard: Square[][], colour: Colour, kingCheck: boolean) => {
+        const kingInfo: PieceInfoType = getKingPieceInfo(updatedBoard, colour)
+        const row = kingCheck? kingInfo.cell.row: cell.row 
+        const col = kingCheck? kingInfo.cell.col: cell.col 
+        return isDiagonalSafe({row, col}, updatedBoard, colour) 
+            && isPlusSafe({row, col}, updatedBoard, colour) 
+            && isHorseSafe({row, col}, updatedBoard, colour)
     }
+
     const rowColExists = (row: (number | undefined), col: (number | undefined)) => row !== undefined && row >= 0 && row <= 7 && col !== undefined && col >= 0 && col <= 7
-    const getKingPieceInfo = (updatedBoard: Square[][], isWhiteTurn: boolean): PieceInfoType => {
-        let kingInfo: PieceInfoType = null;
+    const getKingPieceInfo = (updatedBoard: Square[][], colour: Colour): PieceInfo => {
         outerLoop: for (let rIndex = 0; rIndex < updatedBoard.length; rIndex++) {
             for (let cIndex = 0; cIndex < updatedBoard[rIndex].length; cIndex++) {
                 const tile = updatedBoard[rIndex][cIndex];
-                if (tile?.piece === "K" && ((tile?.colour === "WHITE" && isWhiteTurn) || (tile?.colour === "BLACK" && !isWhiteTurn))) {
-                    kingInfo = {
+                if (tile?.piece === "K" && tile?.colour === colour) {
+                    return {
                         cell: {
                             col: cIndex,
                             row: rIndex
@@ -506,10 +529,19 @@ export const useChessTile = () => {
                 }
             }
         }
-        return kingInfo
+        return {cell: {col:100,row:100},tile: {colour:"WHITE",piece:""}}
     }
-    const onCheck = (kingInfo: PieceInfoType, nextTile: Square, row: number, col: number) => {
-        console.log(`${kingInfo?.tile.colour === "WHITE" ? 'White' : 'Black'} king is in check on (${kingInfo?.cell.row},${kingInfo?.cell.col}) from a ${nextTile?.piece} at (${row},${col})`)
+
+    const onCheck = (row: number, col: number, updatedBoard: Square[][]) => {
+        const kingInfo: PieceInfoType = {
+            cell: {row, col},
+            tile:{
+                piece: updatedBoard[row][col]?updatedBoard[row][col]?.piece: "",
+                colour: updatedBoard[row][col]?updatedBoard[row][col]?.colour: "WHITE",
+                untouched: updatedBoard[row][col]?.untouched
+            }
+        }
+            
         kingOnCheck.current = [...kingOnCheck.current, kingInfo]
     }
     const kingMove = (row: number, col: number, tile: Square, moves: Cell[]) => {
